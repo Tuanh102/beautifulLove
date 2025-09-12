@@ -1,0 +1,92 @@
+/*-------------------banner------------------------*/
+.custom-slide {
+    max-width: 90%;      /* chỉ chiếm 80% chiều ngang màn hình */
+    max-height: 400px;   /* giới hạn chiều cao */
+    margin: 0 auto;      /* căn giữa */
+    border-radius: 15px; /* bo góc cho đẹp */
+    overflow: hidden;    /* ẩn phần dư thừa */
+}
+
+.custom-slide img {
+    object-fit: cover;   /* ảnh vừa khung */
+    height: 500px;       /* ảnh bằng chiều cao khung */
+}
+
+
+
+
+/*------------------------Thanh điều hướng dọc mới (bổ sung)-------------------------*/
+.vertical-nav-container {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #f8f9fa; /* Màu nền nhẹ */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 90px;
+}
+
+.vertical-nav-container .nav-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6; /* Đường gạch dưới tiêu đề */
+    padding-bottom: 0.5rem;
+}
+
+.vertical-nav-container .nav-link {
+    color: #6c757d; /* Màu chữ mặc định */
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.vertical-nav-container .nav-link:hover {
+    background-color: #e9ecef; /* Màu nền khi hover */
+    color: #000;
+    transform: translateX(5px);
+}
+
+
+/*--------------------Nút tròn cho chọn màu------------------------*/
+.color-swatch {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    cursor: pointer;
+    transition: border 0.2s;
+    margin-right: 4px;
+    position: relative;
+}
+.btn-check:checked + .color-swatch {
+    border: 3px solid #0d6efd;
+    box-shadow: 0 0 0 2px #b6d4fe;
+}
+
+
+
+
+/*------------------------- Pagination màu đen toàn bộ -----------------------*/
+.pagination .page-link {
+    background-color: black;  /* nền đen */
+    color: white;             /* chữ trắng */
+    border: 1px solid #333;   /* viền optional */
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #222;   /* nút active đậm hơn */
+    color: white;
+    border-color: #555;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: #111;   /* nút disabled tối hơn */
+    color: #888;
+    pointer-events: none;
+}
+
+

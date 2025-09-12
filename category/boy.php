@@ -1,0 +1,233 @@
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+session_start();
+include 'connect.php';
+
+// Lấy tham số GET
+$product_type = isset($_GET['type']) ? (int)$_GET['type'] : 0; 
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'default';
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
+// Sắp xếp
+$sort_sql = "";
+switch ($sort) {
+    case 'price_asc': $sort_sql = "ORDER BY img_price ASC"; break;
+    case 'price_desc': $sort_sql = "ORDER BY img_price DESC"; break;
+    case 'new': $sort_sql = "ORDER BY img_id DESC"; break;
+    default: $sort_sql = ""; break;
+}
+
+// Điều kiện lọc sản phẩm
+$where = "1";
+if ($product_type > 0) {
+    $where .= " AND img_product = $product_type";
+}
+if ($search !== '') {
+    $search_like = $conn->real_escape_string($search);
+    $where .= " AND img_name LIKE '%$search_like%'";
+}
+
+// Đếm tổng sản phẩm
+$products_per_page = 20;
+$sql_count = "SELECT COUNT(*) AS total FROM pd_boy WHERE $where";
+$total_products = $conn->query($sql_count)->fetch_assoc()['total'];
+$total_pages = ceil($total_products / $products_per_page);
+$offset = ($page - 1) * $products_per_page;
+
+// Lấy sản phẩm hiển thị
+$sql_sp = "SELECT img_id, img_name, img_url, img_price FROM pd_boy WHERE $where $sort_sql LIMIT $products_per_page OFFSET $offset";
+$res_sp = $conn->query($sql_sp);
+?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beautiful Love - Nam</title>
+    <link rel="icon" href="../image/logo/Logo.png"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../style/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
+    <style>
+        .custom-slide img { width: 100%; height: 500px; object-fit: cover; border-radius: 15px;}
+        .vertical-nav-outer { position: sticky; top: 100px; width: 250px;}
+        .vertical-nav-container { padding: 1rem; border-radius: 8px; background-color: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+        .vertical-nav-container .nav-title { font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; }
+        .swiper-slide img {width:100%; height:200px; object-fit:cover; border-radius:10px;}
+        @media(max-width:768px){.vertical-nav-outer{position:relative;width:100%;top:0;margin-bottom:1rem;}}
+    </style>
+</head>
+<body>
+<div>
+<?php include 'header.php'; ?>
+
+<main style="padding-top:90px;">
+    <!-- Banner -->
+    <div id="carouselExample" class="carousel slide custom-slide" data-bs-ride="carousel" data-bs-interval="3000">
+        <div class="carousel-inner">
+            <?php
+            $sql_banner = "SELECT id,img_url FROM banner WHERE sex IN ('boy','unisex')";
+            $res_banner = $conn->query($sql_banner);
+            $first = true;
+            if ($res_banner && $res_banner->num_rows > 0) {
+                while ($row = $res_banner->fetch_assoc()) {
+                    $active = $first ? 'active' : '';
+                    $first = false;
+                    echo "<div class='carousel-item $active'><img src='{$row['img_url']}' alt='Banner'></div>";
+                }
+            } else {
+                echo "<div class='carousel-item active'><img src='default.jpg' alt='Banner'></div>";
+            }
+            ?>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="vertical-nav-outer">
+                    <div class="vertical-nav-container">
+                        <h3 class="nav-title">Danh mục</h3>
+                        <ul class="nav flex-column fw-bold">
+                            <li class="nav-item"><a class="nav-link <?=($product_type==0)?'active':''?>" href="?type=0">Tất cả</a></li>
+                            <li class="nav-item"><a class="nav-link <?=($product_type==1)?'active':''?>" href="?type=1">Đồ bộ</a></li>
+                            <li class="nav-item"><a class="nav-link <?=($product_type==2)?'active':''?>" href="?type=2">Áo</a></li>
+                            <li class="nav-item"><a class="nav-link <?=($product_type==3)?'active':''?>" href="?type=3">Quần</a></li>
+                            <li class="nav-item"><a class="nav-link <?=($product_type==4)?'active':''?>" href="?type=4">Áo khoác</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center my-4 flex-wrap">
+                    <h1 class="my-0">Nam</h1>
+
+                    <!-- Thanh tìm kiếm + sort + nút -->
+                    <form method="get" class="d-flex align-items-center" style="gap:10px; flex-wrap: nowrap;">
+                        <!-- Giữ type hiện tại -->
+                        <input type="hidden" name="type" value="<?=$product_type?>">
+
+                        <!-- Thanh tìm kiếm -->
+                        <input type="text" name="search" class="form-control" 
+                            placeholder="Tìm sản phẩm..." 
+                            value="<?=htmlspecialchars($search)?>" style="min-width:200px;">
+
+                        <!-- Dropdown sắp xếp -->
+                        <select name="sort" class="form-select" style="width:auto;">
+                            <option value="default" <?=($sort=='default')?'selected':''?>>Mặc định</option>
+                            <option value="price_asc" <?=($sort=='price_asc')?'selected':''?>>Giá (Thấp → Cao)</option>
+                            <option value="price_desc" <?=($sort=='price_desc')?'selected':''?>>Giá (Cao → Thấp)</option>
+                            <option value="new" <?=($sort=='new')?'selected':''?>>Hàng mới về</option>
+                        </select>
+
+                        <!-- Nút tìm kiếm -->
+                        <button type="submit" class="btn btn-dark"><i class="fa fa-search"></i></button>
+                    </form>
+                </div>
+
+                <div class="row">
+                    <?php
+                    if ($res_sp && $res_sp->num_rows > 0) {
+                        while ($row = $res_sp->fetch_assoc()) {
+                            echo '<div class="col-md-3 col-sm-6 mb-4">';
+                            echo '  <div class="card h-100">';
+                            echo '    <img src="'.$row['img_url'].'" class="card-img-top" alt="'.$row['img_name'].'">';
+                            echo '    <div class="card-body text-center">';
+                            echo '      <h5 class="card-title">'.$row['img_name'].'</h5>';
+                            echo '      <p class="card-text text-danger"><strong>'.number_format($row['img_price'],0,",",".").' đ</strong></p>';
+                            echo '      <a href="pay.php?id='.$row['img_id'].'&table=pd_boy" class="btn btn-dark">Mua ngay</a>';
+                            echo '    </div>';
+                            echo '  </div>';
+                            echo '</div>';
+                        }
+                    } else {
+                        echo "<p class='text-center'>Không tìm thấy sản phẩm phù hợp.</p>";
+                    }
+                    ?>
+                </div>
+
+                <!-- Pagination -->
+                <?php if ($total_pages > 1): ?>
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item <?=($page<=1)?'disabled':''?>">
+                                <a class="page-link" href="?type=<?=$product_type?>&search=<?=urlencode($search)?>&sort=<?=$sort?>&page=<?=$page-1?>">Trước</a>
+                            </li>
+                            <?php for($i=1;$i<=$total_pages;$i++): ?>
+                                <li class="page-item <?=($i==$page)?'active':''?>">
+                                    <a class="page-link" href="?type=<?=$product_type?>&search=<?=urlencode($search)?>&sort=<?=$sort?>&page=<?=$i?>"><?=$i?></a>
+                                </li>
+                            <?php endfor; ?>
+                            <li class="page-item <?=($page>=$total_pages)?'disabled':''?>">
+                                <a class="page-link" href="?type=<?=$product_type?>&search=<?=urlencode($search)?>&sort=<?=$sort?>&page=<?=$page+1?>">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sản phẩm nổi bật -->
+    <div class="container my-5">
+        <h1 class="mb-3 text-center">Sản phẩm nổi bật</h1>
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                <?php
+                $sql_featured = "SELECT img_id, img_url FROM pd_boy WHERE img_status = 1";
+                $res_featured = $conn->query($sql_featured);
+                if ($res_featured && $res_featured->num_rows > 0) {
+                    while ($row = $res_featured->fetch_assoc()) {
+                        echo '<div class="swiper-slide">';
+                        echo '  <a href="pay.php?id='.$row['img_id'].'&table=pd_boy">';
+                        echo '    <img src="'.$row['img_url'].'">';
+                        echo '  </a>';
+                        echo '</div>';
+                    }
+                } else {
+                    echo "<p class='text-center'>Hiện chưa có sản phẩm nổi bật.</p>";
+                }
+                ?>
+            </div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</main>
+
+<?php include 'footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+<script>
+    var swiper = new Swiper(".mySwiper", {
+        slidesPerView: 6,
+        spaceBetween: 15,
+        navigation: {nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev"},
+        loop: true,
+        breakpoints: {
+            1200: {slidesPerView: 6},
+            992: {slidesPerView: 4},
+            768: {slidesPerView: 3},
+            576: {slidesPerView: 2},
+            0: {slidesPerView: 1}
+        }
+    });
+</script>
+</div>
+</body>
+</html>
