@@ -60,6 +60,14 @@ if ($search !== '') {
         .vertical-nav-container .nav-link.active {font-weight: bold;color: #000;}
         .swiper-slide img {width:100%; height:200px; object-fit:cover; border-radius:10px;}
         @media(max-width:768px){.vertical-nav-outer{position:relative;width:100%;top:0;margin-bottom:1rem;}}
+        /* chỉnh màu mũi tên của Swiper */
+        .swiper-button-next::after,
+        .swiper-button-prev::after {
+            color: #6c757d; /* xám */
+            opacity: 0.6;   /* mờ mờ */
+            font-size: 24px; /* tùy chỉnh kích thước */
+        }
+
     </style>
 </head>
 <body>

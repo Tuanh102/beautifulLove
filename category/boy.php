@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 session_start();
 include 'connect.php';
 
-// Lấy tham số GET
+// Lấy tham số GET và làm sạch dữ liệu đầu vào
 $product_type = isset($_GET['type']) ? (int)$_GET['type'] : 0; 
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'default';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -25,7 +25,7 @@ switch ($sort) {
 // Điều kiện lọc sản phẩm
 $where = "1";
 if ($product_type > 0) {
-    $where .= " AND img_product = $product_type";
+    $where .= " AND img_product = " . $product_type;
 }
 if ($search !== '') {
     $search_like = $conn->real_escape_string($search);
@@ -59,8 +59,17 @@ $res_sp = $conn->query($sql_sp);
         .vertical-nav-outer { position: sticky; top: 100px; width: 250px;}
         .vertical-nav-container { padding: 1rem; border-radius: 8px; background-color: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
         .vertical-nav-container .nav-title { font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; }
+        .vertical-nav-container .nav-link { color:#6c757d; padding:0.75rem 1rem; border-radius:4px; margin-bottom:0.5rem; transition: all 0.3s ease;}
+        .vertical-nav-container .nav-link:hover { background-color:#e9ecef; color:#000; transform: translateX(5px);}
+        .vertical-nav-container .nav-link.active {font-weight: bold; color: #000 !important;}
         .swiper-slide img {width:100%; height:200px; object-fit:cover; border-radius:10px;}
         @media(max-width:768px){.vertical-nav-outer{position:relative;width:100%;top:0;margin-bottom:1rem;}}
+        .swiper-button-next::after,
+        .swiper-button-prev::after {
+            color: #6c757d;
+            opacity: 0.6;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
@@ -68,7 +77,6 @@ $res_sp = $conn->query($sql_sp);
 <?php include 'header.php'; ?>
 
 <main style="padding-top:90px;">
-    <!-- Banner -->
     <div id="carouselExample" class="carousel slide custom-slide" data-bs-ride="carousel" data-bs-interval="3000">
         <div class="carousel-inner">
             <?php
@@ -96,38 +104,42 @@ $res_sp = $conn->query($sql_sp);
 
     <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3">
                 <div class="vertical-nav-outer">
                     <div class="vertical-nav-container">
                         <h3 class="nav-title">Danh mục</h3>
                         <ul class="nav flex-column fw-bold">
-                            <li class="nav-item"><a class="nav-link <?=($product_type==0)?'active':''?>" href="?type=0">Tất cả</a></li>
-                            <li class="nav-item"><a class="nav-link <?=($product_type==1)?'active':''?>" href="?type=1">Đồ bộ</a></li>
-                            <li class="nav-item"><a class="nav-link <?=($product_type==2)?'active':''?>" href="?type=2">Áo</a></li>
-                            <li class="nav-item"><a class="nav-link <?=($product_type==3)?'active':''?>" href="?type=3">Quần</a></li>
-                            <li class="nav-item"><a class="nav-link <?=($product_type==4)?'active':''?>" href="?type=4">Áo khoác</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link <?=($product_type==0)?'active':''?>" href="?type=0&search=<?=urlencode($search)?>&sort=<?=$sort?>">Tất cả</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?=($product_type==1)?'active':''?>" href="?type=1&search=<?=urlencode($search)?>&sort=<?=$sort?>">Đồ bộ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?=($product_type==2)?'active':''?>" href="?type=2&search=<?=urlencode($search)?>&sort=<?=$sort?>">Áo</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?=($product_type==3)?'active':''?>" href="?type=3&search=<?=urlencode($search)?>&sort=<?=$sort?>">Quần</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?=($product_type==4)?'active':''?>" href="?type=4&search=<?=urlencode($search)?>&sort=<?=$sort?>">Áo khoác</a>
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Content -->
             <div class="col-md-9">
                 <div class="d-flex justify-content-between align-items-center my-4 flex-wrap">
                     <h1 class="my-0">Nam</h1>
 
-                    <!-- Thanh tìm kiếm + sort + nút -->
                     <form method="get" class="d-flex align-items-center" style="gap:10px; flex-wrap: nowrap;">
-                        <!-- Giữ type hiện tại -->
                         <input type="hidden" name="type" value="<?=$product_type?>">
 
-                        <!-- Thanh tìm kiếm -->
                         <input type="text" name="search" class="form-control" 
                             placeholder="Tìm sản phẩm..." 
                             value="<?=htmlspecialchars($search)?>" style="min-width:200px;">
 
-                        <!-- Dropdown sắp xếp -->
                         <select name="sort" class="form-select" style="width:auto;">
                             <option value="default" <?=($sort=='default')?'selected':''?>>Mặc định</option>
                             <option value="price_asc" <?=($sort=='price_asc')?'selected':''?>>Giá (Thấp → Cao)</option>
@@ -135,7 +147,6 @@ $res_sp = $conn->query($sql_sp);
                             <option value="new" <?=($sort=='new')?'selected':''?>>Hàng mới về</option>
                         </select>
 
-                        <!-- Nút tìm kiếm -->
                         <button type="submit" class="btn btn-dark"><i class="fa fa-search"></i></button>
                     </form>
                 </div>
@@ -146,12 +157,16 @@ $res_sp = $conn->query($sql_sp);
                         while ($row = $res_sp->fetch_assoc()) {
                             echo '<div class="col-md-3 col-sm-6 mb-4">';
                             echo '  <div class="card h-100">';
-                            echo '    <img src="'.$row['img_url'].'" class="card-img-top" alt="'.$row['img_name'].'">';
-                            echo '    <div class="card-body text-center">';
-                            echo '      <h5 class="card-title">'.$row['img_name'].'</h5>';
-                            echo '      <p class="card-text text-danger"><strong>'.number_format($row['img_price'],0,",",".").' đ</strong></p>';
-                            echo '      <a href="pay.php?id='.$row['img_id'].'&table=pd_boy" class="btn btn-dark">Mua ngay</a>';
-                            echo '    </div>';
+                            echo '      <a href="pay.php?id='.$row['img_id'].'&table=pd_boy" class="text-decoration-none text-dark">';
+                            echo '          <img src="'.$row['img_url'].'" class="card-img-top" alt="'.$row['img_name'].'">';
+                            echo '          <div class="card-body text-center">';
+                            echo '              <h5 class="card-title">'.$row['img_name'].'</h5>';
+                            echo '              <p class="card-text text-danger"><strong>'.number_format($row['img_price'],0,",",".").' đ</strong></p>';
+                            echo '          </div>';
+                            echo '      </a>';
+                            echo '      <div class="card-footer bg-white border-0 text-center">';
+                            echo '          <a href="pay.php?id='.$row['img_id'].'&table=pd_boy" class="btn btn-dark w-100">Mua ngay</a>';
+                            echo '      </div>';
                             echo '  </div>';
                             echo '</div>';
                         }
@@ -161,7 +176,6 @@ $res_sp = $conn->query($sql_sp);
                     ?>
                 </div>
 
-                <!-- Pagination -->
                 <?php if ($total_pages > 1): ?>
                     <nav>
                         <ul class="pagination justify-content-center">
@@ -183,7 +197,6 @@ $res_sp = $conn->query($sql_sp);
         </div>
     </div>
 
-    <!-- Sản phẩm nổi bật -->
     <div class="container my-5">
         <h1 class="mb-3 text-center">Sản phẩm nổi bật</h1>
         <div class="swiper mySwiper">
@@ -195,7 +208,7 @@ $res_sp = $conn->query($sql_sp);
                     while ($row = $res_featured->fetch_assoc()) {
                         echo '<div class="swiper-slide">';
                         echo '  <a href="pay.php?id='.$row['img_id'].'&table=pd_boy">';
-                        echo '    <img src="'.$row['img_url'].'">';
+                        echo '      <img src="'.$row['img_url'].'">';
                         echo '  </a>';
                         echo '</div>';
                     }

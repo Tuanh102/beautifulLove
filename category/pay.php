@@ -6,37 +6,45 @@ error_reporting(E_ALL);
 session_start();
 include 'connect.php';
 
-    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-        die("ID sản phẩm không hợp lệ!");
-    }
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    die("ID sản phẩm không hợp lệ!");
+}
 
-    $id = intval($_GET['id']);
+$id = intval($_GET['id']);
 
-    // Lấy bảng từ URL: ?id=5&table=pd_boy hoặc ?id=7&table=pd_girl
-        $table = isset($_GET['table']) ? $_GET['table'] : '';
-        $allowedTables = ['pd_boy', 'pd_girl']; // chỉ cho phép 2 bảng này để tránh hack SQL
+// Lấy bảng từ URL: ?id=5&table=pd_boy hoặc ?id=7&table=pd_girl
+$table = isset($_GET['table']) ? $_GET['table'] : '';
+$allowedTables = ['pd_boy', 'pd_girl']; // chỉ cho phép 2 bảng này để tránh hack SQL
 
-        if (!in_array($table, $allowedTables)) {
-            die("Bảng sản phẩm không hợp lệ!");
-        }
+if (!in_array($table, $allowedTables)) {
+    die("Bảng sản phẩm không hợp lệ!");
+}
 
-        $sql = "SELECT img_id, img_name, img_url, img_price, img_caption 
-                FROM $table 
-                WHERE img_id = $id";
-        $result = $conn->query($sql);
+$sql = "SELECT img_id, img_name, img_url, img_price, img_caption 
+        FROM $table 
+        WHERE img_id = $id";
+$result = $conn->query($sql);
 
 
-    if ($result && $result->num_rows > 0) {
-        $product = $result->fetch_assoc();
-    } else {
-        die("Không tìm thấy sản phẩm!");
-    }
+if ($result && $result->num_rows > 0) {
+    $product = $result->fetch_assoc();
+} else {
+    die("Không tìm thấy sản phẩm!");
+}
 
-    $colors = [
-        'white' => ['label' => 'Trắng', 'color' => '#f8f9fa'],
-        'black' => ['label' => 'Đen', 'color' => '#212529'],
-        'pink'  => ['label' => 'Hồng', 'color' => '#ffc0cb'],
-    ];
+// Thêm 10 màu sắc
+$colors = [
+    'white' => ['label' => 'Trắng', 'color' => '#f8f9fa'],
+    'black' => ['label' => 'Đen', 'color' => '#212529'],
+    'pink'  => ['label' => 'Hồng', 'color' => '#ffc0cb'],
+    'blue'  => ['label' => 'Xanh dương', 'color' => '#007bff'],
+    'red'   => ['label' => 'Đỏ', 'color' => '#dc3545'],
+    'green' => ['label' => 'Xanh lá', 'color' => '#28a745'],
+    'yellow'=> ['label' => 'Vàng', 'color' => '#ffc107'],
+    'gray'  => ['label' => 'Xám', 'color' => '#6c757d'],
+    'brown' => ['label' => 'Nâu', 'color' => '#795548'],
+    'purple'=> ['label' => 'Tím', 'color' => '#6f42c0'],
+];
 ?>
 
 <!DOCTYPE html>
@@ -49,68 +57,78 @@ include 'connect.php';
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
         <style>
-        .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 1px solid #ccc; }
-        .comment-box { font-family: sans-serif; }
-        .comment, .reply {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .reply { margin-left: 50px; background: #f9f9f9; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
-        .content { flex: 1; }
-        .name { font-weight: bold; margin-bottom: 3px; }
-        .stars { color: gold; margin-bottom: 5px; }
-        .text { color: #333; }
-        .img-zoom-container {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;  /* ảnh không vượt container */
+            /* Màu sắc và hiệu ứng cho nút chọn màu */
+            .color-swatch {
+                width: 30px; 
+                height: 30px; 
+                border-radius: 50%; 
+                cursor: pointer; 
+                border: 2px solid transparent; /* Viền trong suốt mặc định */
+                transition: border-color 0.2s ease, transform 0.2s ease;
+                box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            }
+            .color-swatch:hover {
+                transform: scale(1.1);
+            }
+            input[type="radio"].btn-check:checked + .color-swatch {
+                border-color: #000; /* Viền đen đậm khi được chọn */
+                transform: scale(1.1);
             }
 
+            .comment-box { font-family: sans-serif; }
+            .comment, .reply {
+                display: flex;
+                gap: 10px;
+                align-items: flex-start;
+                background: white;
+                padding: 10px;
+                border-radius: 8px;
+                margin-bottom: 8px;
+            }
+            .reply { margin-left: 50px; background: #f9f9f9; }
+            .avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+            .content { flex: 1; }
+            .name { font-weight: bold; margin-bottom: 3px; }
+            .stars { color: gold; margin-bottom: 5px; }
+            .text { color: #333; }
+            .img-zoom-container {
+                position: relative;
+                display: inline-block;
+                max-width: 100%;
+            }
             .img-zoom-container img {
-            width: 350px; /* hoặc 100% để responsive */
-            border-radius: 10px;
-            display: block;
+                width: 350px;
+                border-radius: 10px;
+                display: block;
             }
-
-
             #zoom-lens {
-            position: absolute;
-            border: 2px solid #ccc;
-            border-radius: 50%;
-            width: 100px;   /* kích thước kính lúp */
-            height: 100px;
-            overflow: hidden;
-            display: none;  /* ẩn khi chưa hover */
-            pointer-events: none; /* không cản trở chuột */
-            background-repeat: no-repeat;
-            background-size: 200% 200%; /* zoom 2x */
+                position: absolute;
+                border: 2px solid #ccc;
+                border-radius: 50%;
+                width: 100px;
+                height: 100px;
+                overflow: hidden;
+                display: none;
+                pointer-events: none;
+                background-repeat: no-repeat;
+                background-size: 200% 200%;
             }
-
             .img-container {
-            width: 100%;          /* khung bằng card */
-            aspect-ratio: 1 / 1;   /* giữ tỉ lệ vuông */
-            overflow: hidden;      /* ẩn phần tràn */
-            border-radius: 10px;   /* bo góc khung */
-            position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                overflow: hidden;
+                border-radius: 10px;
+                position: relative;
             }
-
             .product-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;     /* ảnh không méo */
-            transition: transform 0.5s ease-in-out;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.5s ease-in-out;
             }
-
             .img-container:hover .product-img {
-            transform: scale(1.3); /* zoom nhưng vẫn trong khung */
+                transform: scale(1.3);
             }
-
         </style>
     </head>
     <body>
@@ -136,26 +154,26 @@ include 'connect.php';
                         img.addEventListener("mouseleave", () => lens.style.display = "none");
 
                         function moveLens(e) {
-                        const rect = img.getBoundingClientRect();
-                        let x = e.clientX - rect.left;
-                        let y = e.clientY - rect.top;
-                        const lensSize = lens.offsetWidth / 2;
+                            const rect = img.getBoundingClientRect();
+                            let x = e.clientX - rect.left;
+                            let y = e.clientY - rect.top;
+                            const lensSize = lens.offsetWidth / 2;
 
-                        // Giới hạn lens không vượt ra ngoài ảnh
-                        if (x < lensSize) x = lensSize;
-                        if (x > rect.width - lensSize) x = rect.width - lensSize;
-                        if (y < lensSize) y = lensSize;
-                        if (y > rect.height - lensSize) y = rect.height - lensSize;
+                            // Giới hạn lens không vượt ra ngoài ảnh
+                            if (x < lensSize) x = lensSize;
+                            if (x > rect.width - lensSize) x = rect.width - lensSize;
+                            if (y < lensSize) y = lensSize;
+                            if (y > rect.height - lensSize) y = rect.height - lensSize;
 
-                        // Di chuyển lens
-                        lens.style.left = `${x - lensSize}px`;
-                        lens.style.top = `${y - lensSize}px`;
+                            // Di chuyển lens
+                            lens.style.left = `${x - lensSize}px`;
+                            lens.style.top = `${y - lensSize}px`;
 
-                        // Thiết lập background ảnh phóng to
-                        const zoom = 2; // độ zoom (2x)
-                        lens.style.backgroundImage = `url(${img.src})`;
-                        lens.style.backgroundSize = `${rect.width * zoom}px ${rect.height * zoom}px`;
-                        lens.style.backgroundPosition = `-${x * zoom - lensSize}px -${y * zoom - lensSize}px`;
+                            // Thiết lập background ảnh phóng to
+                            const zoom = 2; // độ zoom (2x)
+                            lens.style.backgroundImage = `url(${img.src})`;
+                            lens.style.backgroundSize = `${rect.width * zoom}px ${rect.height * zoom}px`;
+                            lens.style.backgroundPosition = `-${x * zoom - lensSize}px -${y * zoom - lensSize}px`;
                         }
                     </script>
 
@@ -168,7 +186,6 @@ include 'connect.php';
                             <input type="hidden" name="id" value="<?php echo (int)$product['img_id']; ?>">
                             <input type="hidden" name="table" value="<?php echo htmlspecialchars($table); ?>">
 
-                            <!-- Chọn màu -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Chọn màu:</label>
                                 <div class="d-flex gap-3">
@@ -179,7 +196,6 @@ include 'connect.php';
                                 </div>
                             </div>
 
-                            <!-- Chọn size -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Chọn size:</label>
                                 <div class="d-flex gap-2">
@@ -190,7 +206,6 @@ include 'connect.php';
                                 </div>
                             </div>
 
-                            <!-- Số lượng -->
                             <div class="mb-3">
                                 <label for="quantity" class="form-label fw-bold">Số lượng:</label>
                                 <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" style="max-width: 100px;">
@@ -225,47 +240,47 @@ include 'connect.php';
                     <div class="comment-box" id="commentBox"></div>
                 </div>
 
-                    <script>
-                        const comments = [
-                            {
-                                name: "Alice",
-                                avatar: "https://i.pravatar.cc/40?img=1",
-                                text: "Sản phẩm đẹp quá! 😍",
-                                rating: 5,
-                                replies: [
-                                {name: "Bob", avatar: "https://i.pravatar.cc/40?img=2", text: "Đúng vậy, mình cũng thích!"},
-                                {name: "Charlie", avatar: "https://i.pravatar.cc/40?img=3", text: "Mình chưa mua nhưng muốn thử."}
-                                ]
-                            },
-                            {
-                                name: "Diana",
-                                avatar: "https://i.pravatar.cc/40?img=4",
-                                text: "Giao hàng nhanh, đóng gói cẩn thận.",
-                                rating: 4,
-                                replies: [
-                                {name: "Eve", avatar: "https://i.pravatar.cc/40?img=5", text: "Giao hàng nhanh thật!"}
-                                ]
-                            },
-                            {
-                                name: "Nina",
-                                avatar: "https://i.pravatar.cc/40?img=15",
-                                text: "Giao hàng hơi chậm, nhưng sản phẩm ok.",
-                                rating: 4,
-                                replies: [
-                                {name: "Oscar", avatar: "https://i.pravatar.cc/40?img=16", text: "Cảm ơn review, mình sẽ kiên nhẫn chờ hàng."}
-                                ]
-                            },
-                            {
-                                name: "Karen",
-                                avatar: "https://i.pravatar.cc/40?img=12",
-                                text: "Mình rất thích chất liệu, mặc thoải mái cả ngày.",
-                                rating: 5,
-                                replies: [
-                                {name: "Leo", avatar: "https://i.pravatar.cc/40?img=13", text: "Cảm ơn bồ, mình sẽ đặt thử!"},
-                                {name: "Mona", avatar: "https://i.pravatar.cc/40?img=14", text: "Nghe hay đó, mình cũng muốn thử."}
-                                ]
-                            },
-                            ];
+                <script>
+                    const comments = [
+                        {
+                            name: "Alice",
+                            avatar: "https://i.pravatar.cc/40?img=1",
+                            text: "Sản phẩm đẹp quá! 😍",
+                            rating: 5,
+                            replies: [
+                            {name: "Bob", avatar: "https://i.pravatar.cc/40?img=2", text: "Đúng vậy, mình cũng thích!"},
+                            {name: "Charlie", avatar: "https://i.pravatar.cc/40?img=3", text: "Mình chưa mua nhưng muốn thử."}
+                            ]
+                        },
+                        {
+                            name: "Diana",
+                            avatar: "https://i.pravatar.cc/40?img=4",
+                            text: "Giao hàng nhanh, đóng gói cẩn thận.",
+                            rating: 4,
+                            replies: [
+                            {name: "Eve", avatar: "https://i.pravatar.cc/40?img=5", text: "Giao hàng nhanh thật!"}
+                            ]
+                        },
+                        {
+                            name: "Nina",
+                            avatar: "https://i.pravatar.cc/40?img=15",
+                            text: "Giao hàng hơi chậm, nhưng sản phẩm ok.",
+                            rating: 4,
+                            replies: [
+                            {name: "Oscar", avatar: "https://i.pravatar.cc/40?img=16", text: "Cảm ơn review, mình sẽ kiên nhẫn chờ hàng."}
+                            ]
+                        },
+                        {
+                            name: "Karen",
+                            avatar: "https://i.pravatar.cc/40?img=12",
+                            text: "Mình rất thích chất liệu, mặc thoải mái cả ngày.",
+                            rating: 5,
+                            replies: [
+                            {name: "Leo", avatar: "https://i.pravatar.cc/40?img=13", text: "Cảm ơn bồ, mình sẽ đặt thử!"},
+                            {name: "Mona", avatar: "https://i.pravatar.cc/40?img=14", text: "Nghe hay đó, mình cũng muốn thử."}
+                            ]
+                        },
+                    ];
                     comments.forEach(c => {
                         // comment cha
                         const div = document.createElement("div");
@@ -280,8 +295,7 @@ include 'connect.php';
                             <div class="name">${c.name}</div>
                             <div class="stars">${stars}</div>
                             <div class="text">${c.text}</div>
-                            <div class="replies"></div> <!-- chứa reply -->
-                            </div>
+                            <div class="replies"></div> </div>
                         `;
                         commentBox.appendChild(div);
 
@@ -298,78 +312,76 @@ include 'connect.php';
                             `;
                             repliesDiv.appendChild(rDiv);
                         });
-                        });
-                    </script>
-                    <?php
-                        // Lấy sản phẩm nổi bật theo bảng hiện tại (img_status = 'good')
-                        $sql_featured = "SELECT img_id, img_name, img_url, img_price 
-                                        FROM $table 
-                                        WHERE img_status = 'good' 
-                                        ORDER BY img_id DESC";
-                        $result_featured = $conn->query($sql_featured);
-                    ?>
+                    });
+                </script>
+                <?php
+                    // Lấy sản phẩm nổi bật theo bảng hiện tại (img_status = 'good')
+                    $sql_featured = "SELECT img_id, img_name, img_url, img_price 
+                                    FROM $table 
+                                    WHERE img_status = 1 
+                                    ORDER BY RAND() LIMIT 10"; // lấy ngẫu nhiên 10 sản phẩm
+                    $result_featured = $conn->query($sql_featured);
+                ?>
 
-                    <div class="mt-5">
-                        <h4 class="mb-4">Sản phẩm nổi bật</h4>
-                        <?php if($result_featured && $result_featured->num_rows > 0): ?>
-                            <div class="swiper featuredSwiper">
-                                <div class="swiper-wrapper">
-                                    <?php while($f = $result_featured->fetch_assoc()): ?>
-                                        <div class="swiper-slide">
-                                            <div class="card h-100 shadow-sm">
-                                                <a href="pay.php?id=<?php echo $f['img_id']; ?>&table=<?php echo $table; ?>">
-                                                    <img src="<?php echo $f['img_url']; ?>" 
-                                                        class="card-img-top" 
-                                                        alt="<?php echo htmlspecialchars($f['img_name']); ?>">
-                                                </a>
-                                                <div class="card-body text-center">
-                                                    <h6 class="card-title mb-2">
-                                                        <?php echo htmlspecialchars($f['img_name']); ?>
-                                                    </h6>
-                                                    <p class="text-danger fw-bold mb-2">
-                                                        <?php echo number_format($f['img_price'], 0, ",", "."); ?> đ
-                                                    </p>
-                                                    <a href="pay.php?id=<?php echo $f['img_id']; ?>&table=<?php echo $table; ?>" 
-                                                    class="btn btn-sm btn-outline-primary">Xem</a>
-                                                </div>
+                <div class="mt-5">
+                    <h4 class="mb-4">Sản phẩm nổi bật</h4>
+                    <?php if($result_featured && $result_featured->num_rows > 0): ?>
+                        <div class="swiper featuredSwiper">
+                            <div class="swiper-wrapper">
+                                <?php while($f = $result_featured->fetch_assoc()): ?>
+                                    <div class="swiper-slide">
+                                        <div class="card h-100 shadow-sm">
+                                            <a href="pay.php?id=<?php echo $f['img_id']; ?>&table=<?php echo $table; ?>">
+                                                <img src="<?php echo $f['img_url']; ?>" 
+                                                     class="card-img-top" 
+                                                     alt="<?php echo htmlspecialchars($f['img_name']); ?>">
+                                            </a>
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title mb-2">
+                                                    <?php echo htmlspecialchars($f['img_name']); ?>
+                                                </h6>
+                                                <p class="text-danger fw-bold mb-2">
+                                                    <?php echo number_format($f['img_price'], 0, ",", "."); ?> đ
+                                                </p>
+                                                <a href="pay.php?id=<?php echo $f['img_id']; ?>&table=<?php echo $table; ?>" 
+                                                class="btn btn-sm btn-outline-primary">Xem</a>
                                             </div>
                                         </div>
-                                    <?php endwhile; ?>
-                                </div>
-                                <!-- Nút điều hướng -->
-                                <div class="swiper-button-next"></div>
-                                <div class="swiper-button-prev"></div>
+                                    </div>
+                                <?php endwhile; ?>
                             </div>
-                        <?php else: ?>
-                            <p>Không có sản phẩm nổi bật!</p>
-                        <?php endif; ?>
-                    </div>
+                            <div class="swiper-button-next"></div>
+                            <div class="swiper-button-prev"></div>
+                        </div>
+                    <?php else: ?>
+                        <p>Không có sản phẩm nổi bật!</p>
+                    <?php endif; ?>
+                </div>
 
-                    <!-- SwiperJS -->
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
-                    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-                    <script>
-                        var swiper = new Swiper(".featuredSwiper", {
-                            slidesPerView: 5,
-                            spaceBetween: 15,
-                            navigation: {
-                                nextEl: ".swiper-button-next",
-                                prevEl: ".swiper-button-prev",
-                            },
-                            loop: true,
-                            breakpoints: {
-                                1200: { slidesPerView: 5 },
-                                992: { slidesPerView: 4 },
-                                768: { slidesPerView: 3 },
-                                576: { slidesPerView: 2 },
-                                0: { slidesPerView: 1 }
-                            }
-                        });
-                    </script>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
+                <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+                <script>
+                    var swiper = new Swiper(".featuredSwiper", {
+                        slidesPerView: 5,
+                        spaceBetween: 15,
+                        navigation: {
+                            nextEl: ".swiper-button-next",
+                            prevEl: ".swiper-button-prev",
+                        },
+                        loop: true,
+                        breakpoints: {
+                            1200: { slidesPerView: 5 },
+                            992: { slidesPerView: 4 },
+                            768: { slidesPerView: 3 },
+                            576: { slidesPerView: 2 },
+                            0: { slidesPerView: 1 }
+                        }
+                    });
+                </script>
             </div>
         </main>
         <?php include 'footer.php'; ?>
-
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             // Nút Thêm vào giỏ
             document.getElementById('add-to-cart-btn').addEventListener('click', async function(){
